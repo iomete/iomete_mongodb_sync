@@ -1,0 +1,11 @@
+/.git
+/.envrc
+/.readme.md
+/.idea/
+/.env/
+/.pyhon_job_template.egg-info/
+/build/
+/dist/
+/venv/
+**/__pycache__
+**/*.egg-info
