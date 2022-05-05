@@ -3,6 +3,11 @@
 
 ## Deployment
 
+
+> Note: Before deploying, make sure you have the following:
+> - Manually create a target database. In this example, it's `docdb_raw`
+> - Setup SSH Tunnel to your DocumentDB or MongoDB server
+
 - Go to `Spark Jobs`.
 - Click on `Create New`.
 
