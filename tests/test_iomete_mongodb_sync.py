@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 """Tests for `iomete_mongodb_sync` package."""
-from config import get_config
-from main import start_job
+from iomete_mongodb_sync.config import get_config
+from iomete_mongodb_sync.main import start_job
 from tests._spark_session import get_spark_session
 
 

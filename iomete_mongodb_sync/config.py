@@ -29,6 +29,7 @@ class SyncConfig:
     source_database: str
     source_collections: list[str]
     destination_schema: str
+    is_all_collections: bool = False
 
 
 @dataclass
@@ -50,13 +51,13 @@ def get_config(application_path) -> ApplicationConfig:
 
     syncs = []
     for sync in config["syncs"] or []:
-        syncs.append(
-            SyncConfig(
-                source_database=sync.get_string("source_database"),
-                source_collections=sync.get_list("source_collections"),
-                destination_schema=sync.get_string("destination_schema")
-            )
+        sync_config = SyncConfig(
+            source_database=sync.get_string("source_database"),
+            source_collections=sync.get_list("source_collections"),
+            destination_schema=sync.get_string("destination_schema"),
         )
+        sync_config.is_all_collections = sync_config.source_collections and sync_config.source_collections[0] == "*",
+        syncs.append(sync_config)
 
     return ApplicationConfig(
         connection=connection,
