@@ -1,6 +1,9 @@
 docker_image := iomete/iomete_mongodb_sync
 docker_tag := 0.1.0
 
+test:
+	pytest --capture=no --log-cli-level=INFO
+
 docker-build:
 	# Run this for one time: docker buildx create --use
 	docker build -f docker/Dockerfile -t ${docker_image}:${docker_tag} .

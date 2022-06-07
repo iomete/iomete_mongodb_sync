@@ -58,7 +58,7 @@ The job will be run based on the defined schedule. But, you can trigger the job 
 **Prepare the dev environment**
 
 ```shell
-virtualenv .env #or pyhton3 -m venv .env
+virtualenv .env #or python3 -m venv .env
 source .env/bin/activate
 
 pip install -e ."[dev]"

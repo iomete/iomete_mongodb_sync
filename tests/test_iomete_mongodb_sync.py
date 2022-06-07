@@ -20,7 +20,7 @@ def test_mongodb_sync():
     # check
     df = spark.sql(f"select * from docdb_raw.restaurants")
     df.printSchema()
-    assert df.count() == 2548
+    assert df.count() == 2
 
 
 if __name__ == "__main__":

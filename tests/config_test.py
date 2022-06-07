@@ -13,7 +13,7 @@ def test_config_parsing():
         ),
         syncs=[
             SyncConfig(
-                source_database="business",
+                source_database="test",
                 source_collections=["restaurants"],
                 destination_schema="docdb_raw"
             )
