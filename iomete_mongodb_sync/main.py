@@ -4,7 +4,7 @@ from iomete_mongodb_sync.logger import init_logger
 from pyspark.sql import SparkSession
 
 from config import ApplicationConfig
-from iomete_mongodb_sync.mono_db_sync import MonoDbSync
+from iomete_mongodb_sync.mongo_db_sync import MonoDbSync
 
 
 def start_job(spark: SparkSession, config: ApplicationConfig):
