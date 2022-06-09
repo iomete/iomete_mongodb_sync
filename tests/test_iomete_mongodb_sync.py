@@ -9,17 +9,15 @@ from tests._spark_session import get_spark_session
 def test_mongodb_sync():
     # create test spark instance
     test_config = get_config("application.conf")
-    # spark = get_spark_session()
     spark = get_spark_session()
 
-    spark.sql("CREATE DATABASE IF NOT EXISTS docdb_raw")
+    spark.sql("CREATE DATABASE IF NOT EXISTS docdb_test")
 
     # run target
     start_job(spark, test_config)
 
     # check
-    df = spark.sql(f"select * from docdb_raw.restaurants")
-    df.printSchema()
+    df = spark.sql(f"select * from docdb_test.restaurants")
     assert df.count() == 2
 
 

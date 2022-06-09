@@ -1,6 +1,11 @@
 docker_image := iomete/iomete_mongodb_sync
 docker_tag := 0.1.0
 
+setup:
+	python3 -m venv .env
+	source .env/bin/activate
+	pip install -e ."[dev]"
+
 test:
 	pytest --capture=no --log-cli-level=INFO
 

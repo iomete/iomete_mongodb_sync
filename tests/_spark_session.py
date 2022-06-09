@@ -1,5 +1,5 @@
 import pathlib
-import tempfile
+# import tempfile
 
 from pyspark.sql import SparkSession
 
@@ -12,9 +12,7 @@ packages = [
     "mysql:mysql-connector-java:8.0.20"
 ]
 
-lakehouse_dir = tempfile.mkdtemp(prefix="iom-lakehouse")
-
-print(f"Lakehouse dir: {lakehouse_dir}")
+lakehouse_dir = "lakehouse" # tempfile.mkdtemp(prefix="iom-lakehouse")
 
 
 def get_spark_session():
@@ -25,11 +23,12 @@ def get_spark_session():
         .config("spark.sql.catalog.spark_catalog", "org.apache.iceberg.spark.SparkSessionCatalog") \
         .config("spark.sql.catalog.spark_catalog.type", "hadoop") \
         .config("spark.sql.catalog.spark_catalog.warehouse", lakehouse_dir) \
-        .config("spark.sql.warehouse.dir", lakehouse_dir) \
         .config("spark.jars.packages", ",".join(packages)) \
         .config("spark.jars", ",".join(jars)) \
         .config("spark.sql.legacy.createHiveTableByDefault", "false") \
         .config("spark.sql.sources.default", "iceberg") \
         .getOrCreate()
+        # .config("spark.sql.warehouse.dir", lakehouse_dir) \
 
+    spark.sparkContext.setLogLevel("ERROR")
     return spark

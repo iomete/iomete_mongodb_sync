@@ -1,6 +1,6 @@
 import logging
+import time
 from pyspark.sql import SparkSession
-from pymongo import MongoClient
 
 from config import ApplicationConfig
 
@@ -11,40 +11,70 @@ class MonoDbSync:
     def __init__(self, spark: SparkSession, config: ApplicationConfig):
         self.spark = spark
         self.config = config
-        self.client = MongoClient(config.connection.host,
-                                  username=config.connection.username,
-                                  password=config.connection.password)
+        self.connection_string = self.config.connection.build_connection_string()
 
-    def sync_table_to_mongodb(self):
-        logger.info("sync_table_to_mongodb started")
+    def run(self):
+        timer("MongoDB Sync")(self.sync_tables)()
 
-        connection_string = self.config.connection.build_connection_string()
-
-        self.spark.sql("show tables").show()
-
+    def sync_tables(self):
         for sync in self.config.syncs:
-            logger.info("Sync {}".format(sync))
-
-            source_collections = sync.source_collections
-            if sync.is_all_collections:
-                source_collections = self.__get_collections_of_source_database(sync.source_database)
-
             # create database manually, creating it automatically is not supported by spark 3.1
-            for collection in source_collections:
-                df = self.spark.read.format("mongo") \
-                    .option("uri", connection_string) \
-                    .option("database", sync.source_database) \
-                    .option("collection", collection) \
-                    .load()
+            max_table_name_length = max([len(collection) for collection in sync.source_collections])
 
-                tmp_table_name = "tmp_" + collection
-                df.createTempView(tmp_table_name)
+            for collection in sync.source_collections:
+                message = f"[{collection: <{max_table_name_length}}]: collection sync"
+                table_timer(message)(self.__sync_table)(collection, sync.source_database, sync.destination_schema)
 
-                self.spark.sql(
-                    f"""create or replace table {sync.destination_schema}.{collection}
-                            as select * from {tmp_table_name}""")
+    def __sync_table(self, collection: str, source_database: str, destination_schema: str):
+        df = self.spark.read.format("mongo") \
+                .option("uri", self.connection_string) \
+                .option("database", source_database) \
+                .option("collection", collection) \
+                .load()
 
-        logger.info("sync_table_to_mongodb finished!")
+        tmp_table_name = "tmp_" + collection
+        df.createTempView(tmp_table_name)
 
-    def __get_collections_of_source_database(self, source_database):
-        return self.client[source_database].list_collections(include_system_collections=False)
+        self.spark.sql(
+            f"""create or replace table {destination_schema}.{collection}
+                    as select * from {tmp_table_name}""")
+        
+        current_rows_count = self.query_single_value(f"select count(1) from {destination_schema}.{collection}")
+        return current_rows_count
+
+
+    def query_single_value(self, query):
+        result = self.spark.sql(query).collect()
+        if result and len(result) > 0:
+            return result[0][0]
+        return None
+
+
+def timer(message: str):
+    def timer_decorator(method):
+        def timer_func(*args, **kw):
+            logger.info(f"{message} started")
+            start_time = time.time()
+            result = method(*args, **kw)
+            duration = (time.time() - start_time)
+            logger.info(f"{message} completed in {duration:0.2f} seconds")
+            return result
+
+        return timer_func
+
+    return timer_decorator
+
+
+def table_timer(message: str):
+    def timer_decorator(method):
+        def timer_func(*args, **kw):
+            logger.info(f"{message} started")
+            start_time = time.time()
+            total_rows = method(*args, **kw)
+            duration = (time.time() - start_time)
+            logger.info(f"{message} completed in {duration:0.2f} seconds. Total rows: {total_rows}")
+            return total_rows
+
+        return timer_func
+
+    return timer_decorator

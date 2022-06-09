@@ -10,4 +10,4 @@ from iomete_mongodb_sync.mongo_db_sync import MonoDbSync
 def start_job(spark: SparkSession, config: ApplicationConfig):
     init_logger()
     mongodb_sync = MonoDbSync(spark, config)
-    mongodb_sync.sync_table_to_mongodb()
+    mongodb_sync.run()

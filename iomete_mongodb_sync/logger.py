@@ -28,7 +28,7 @@ def _init_project_logger():
     formatter = logging.Formatter(_get_format())
     handler.setFormatter(formatter)
 
-    project_logger = logging.getLogger("data_compaction")
+    project_logger = logging.getLogger("iomete_mongodb_sync")
     project_logger.setLevel(_get_level())
     project_logger.addHandler(handler)
 
