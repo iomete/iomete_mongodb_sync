@@ -1,6 +1,8 @@
 import logging
 import time
 from pyspark.sql import SparkSession
+from pyspark.sql.types import *
+from pyspark.sql import functions as f
 
 from config import ApplicationConfig
 
@@ -32,8 +34,12 @@ class MonoDbSync:
                 .option("collection", collection) \
                 .load()
 
+
+        # df.printSchema()
+        flatten_df = self.flatten_structs(df)
+        # flatten_df.printSchema()
         tmp_table_name = "tmp_" + collection
-        df.createTempView(tmp_table_name)
+        flatten_df.createTempView(tmp_table_name)
 
         self.spark.sql(
             f"""create or replace table {destination_schema}.{collection}
@@ -48,6 +54,33 @@ class MonoDbSync:
         if result and len(result) > 0:
             return result[0][0]
         return None
+
+    def flatten_structs(self, nested_df):
+        stack = [((), nested_df)]
+        columns = []
+
+        while len(stack) > 0:            
+            parents, df = stack.pop()
+
+            flat_cols = [
+                f.col(".".join(parents + (c[0],))).alias("_".join(parents + (c[0],)))
+                for c in df.dtypes
+                if c[1][:6] != "struct" and c[1][:4] != "null"
+            ]
+
+            nested_cols = [
+                c[0]
+                for c in df.dtypes
+                if c[1][:6] == "struct"
+            ]
+            
+            columns.extend(flat_cols)
+
+            for nested_col in nested_cols:
+                projected_df = df.select(nested_col + ".*")
+                stack.append((parents + (nested_col,), projected_df))
+            
+        return nested_df.select(columns)
 
 
 def timer(message: str):

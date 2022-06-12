@@ -27,6 +27,7 @@ def get_spark_session():
         .config("spark.jars", ",".join(jars)) \
         .config("spark.sql.legacy.createHiveTableByDefault", "false") \
         .config("spark.sql.sources.default", "iceberg") \
+        .config("spark.sql.caseSensitive", "true") \
         .getOrCreate()
         # .config("spark.sql.warehouse.dir", lakehouse_dir) \
 
