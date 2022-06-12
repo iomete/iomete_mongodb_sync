@@ -1,10 +1,11 @@
 import logging
+import re
 import time
 from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 from pyspark.sql import functions as f
 
-from config import ApplicationConfig
+from config import ApplicationConfig, SyncConfig
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +26,12 @@ class MonoDbSync:
 
             for collection in sync.source_collections:
                 message = f"[{collection: <{max_table_name_length}}]: collection sync"
-                table_timer(message)(self.__sync_table)(collection, sync.source_database, sync.destination_schema)
+                table_timer(message)(self.__sync_table)(collection, sync)
 
-    def __sync_table(self, collection: str, source_database: str, destination_schema: str):
+    def __sync_table(self, collection: str, cnf: SyncConfig):
         df = self.spark.read.format("mongo") \
                 .option("uri", self.connection_string) \
-                .option("database", source_database) \
+                .option("database", cnf.source_database) \
                 .option("collection", collection) \
                 .load()
 
@@ -38,14 +39,20 @@ class MonoDbSync:
         # df.printSchema()
         flatten_df = self.flatten_structs(df)
         # flatten_df.printSchema()
+
+        if cnf.column_exclude_pattern is not None:
+            logger.info("Excluding columns matching pattern: %s", cnf.column_exclude_pattern)
+            flatten_df = self.exlude_columns(flatten_df, cnf.column_exclude_pattern)
+
+        # flatten_df.printSchema()
         tmp_table_name = "tmp_" + collection
         flatten_df.createTempView(tmp_table_name)
 
         self.spark.sql(
-            f"""create or replace table {destination_schema}.{collection}
+            f"""create or replace table {cnf.destination_schema}.{collection}
                     as select * from {tmp_table_name}""")
         
-        current_rows_count = self.query_single_value(f"select count(1) from {destination_schema}.{collection}")
+        current_rows_count = self.query_single_value(f"select count(1) from {cnf.destination_schema}.{collection}")
         return current_rows_count
 
 
@@ -82,6 +89,8 @@ class MonoDbSync:
             
         return nested_df.select(columns)
 
+    def exlude_columns(self, df, exclude_pattern):
+        return df.select([c for c in df.columns if not re.match(exclude_pattern, c, re.IGNORECASE)])
 
 def timer(message: str):
     def timer_decorator(method):

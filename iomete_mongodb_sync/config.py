@@ -29,6 +29,7 @@ class SyncConfig:
     source_database: str
     source_collections: list[str]
     destination_schema: str
+    column_exclude_pattern: str = None
     is_all_collections: bool = False
 
 
@@ -54,6 +55,7 @@ def get_config(application_path) -> ApplicationConfig:
         sync_config = SyncConfig(
             source_database=sync.get_string("source_database"),
             source_collections=sync.get_list("source_collections"),
+            column_exclude_pattern=sync.get_string("column_exclude_pattern", None),
             destination_schema=sync.get_string("destination_schema"),
         )
         sync_config.is_all_collections = sync_config.source_collections and sync_config.source_collections[0] == "*",
