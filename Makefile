@@ -1,5 +1,5 @@
 docker_image := iomete/iomete_mongodb_sync
-docker_tag := 0.2.1
+docker_tag := 0.2.2
 
 setup:
 	python3 -m venv .env

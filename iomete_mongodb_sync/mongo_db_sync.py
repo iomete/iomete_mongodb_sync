@@ -33,6 +33,8 @@ class MonoDbSync:
                 .option("uri", self.connection_string) \
                 .option("database", cnf.source_database) \
                 .option("collection", collection) \
+                .option("samplePoolSize", "10000") \
+                .option("sampleSize", "10000") \
                 .load()
 
 
